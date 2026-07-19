@@ -1,12 +1,14 @@
 name: Build Custom OpenCV.js
 on:
-  workflow_dispatch: # Дозволяє запустити збірку вручну кнопкою на сайті
+  workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   build-wasm:
     runs-on: ubuntu-latest
     container:
-      # Фіксуємо стабільну версію Emscripten, яка сумісна з OpenCV 4.x
       image: emscripten/emsdk:3.1.53
 
     steps:
@@ -23,20 +25,22 @@ jobs:
 
       - name: Build OpenCV.js
         run: |
-          # Копіюємо наш конфіг всередину папки збірки OpenCV
           cp minimal_config.py opencv/platforms/js/minimal_config.py
-
-          # Запускаємо збірку у передбачуваному та стабільному середовищі
-          python3 opencv/platforms/js/build_js.py build_out \
+          emcmake python3 opencv/platforms/js/build_js.py build_out \
             --build_wasm \
-            --config opencv/platforms/js/minimal_config.py \
+            --config "$GITHUB_WORKSPACE/opencv/platforms/js/minimal_config.py" \
             --cmake_option="-DCMAKE_BUILD_TYPE=Release" \
             --cmake_option="-DBUILD_opencv_dnn=OFF" \
             --cmake_option="-DBUILD_PROTOBUF=OFF" \
             --cmake_option="-DWITH_PROTOBUF=OFF"
 
-      - name: Upload Result
-        uses: actions/upload-artifact@v4
-        with:
-          name: opencv-js-custom
-          path: build_out/bin/opencv.js
+      - name: Copy opencv.js to repo root
+        run: cp build_out/bin/opencv.js opencv.js
+
+      - name: Commit opencv.js to repo
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add opencv.js
+          git commit -m "Update opencv.js" || echo "Немає змін"
+          git push
