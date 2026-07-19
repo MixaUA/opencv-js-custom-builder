@@ -40,6 +40,7 @@ jobs:
             --build_wasm \
             --config "$GITHUB_WORKSPACE/minimal_config.py" \
             --cmake_option="-DCMAKE_BUILD_TYPE=Release" \
+            --cmake_option="-DCMAKE_CXX_STANDARD=17" \
             --cmake_option="-DBUILD_opencv_dnn=OFF" \
             --cmake_option="-DBUILD_opencv_calib3d=OFF" \
             --cmake_option="-DBUILD_opencv_features2d=OFF" \
