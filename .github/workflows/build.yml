@@ -6,7 +6,8 @@ jobs:
   build-wasm:
     runs-on: ubuntu-latest
     container:
-      image: emscripten/emsdk:latest # Запуск у чистому середовищі Emscripten
+      # Фіксуємо стабільну версію Emscripten, яка ідеально сумісна з OpenCV 4.x
+      image: emscripten/emsdk:3.1.53
 
     steps:
       - name: Checkout repository
@@ -25,11 +26,10 @@ jobs:
           # Копіюємо наш конфіг всередину папки збірки OpenCV
           cp minimal_config.py opencv/platforms/js/minimal_config.py
           
-          # Запускаємо збірку з примусовим вимкненням DNN, Protobuf та супутнього сміття
+          # Запускаємо збірку у передбачуваному та стабільному середовищі
           python3 opencv/platforms/js/build_js.py build_out \
             --build_wasm \
             --config opencv/platforms/js/minimal_config.py \
-            --cmake_option="-DCMAKE_CXX_STANDARD=17" \
             --cmake_option="-DCMAKE_BUILD_TYPE=Release" \
             --cmake_option="-DENABLE_LTO=ON" \
             --cmake_option="-DBUILD_opencv_dnn=OFF" \
