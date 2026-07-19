@@ -25,15 +25,14 @@ jobs:
           # Копіюємо наш конфіг всередину папки збірки OpenCV
           cp minimal_config.py opencv/platforms/js/minimal_config.py
           
-          # Запускаємо офіційний скрипт збірки з нашим конфігом та оптимізацією
-          python3 opencv/platforms/js/build_js.py build_wasm \
+          # Запускаємо збірку з правильним синтаксисом аргументів
+          python3 opencv/platforms/js/build_js.py build_out \
             --build_wasm \
             --config opencv/platforms/js/minimal_config.py \
-            --cmake_option "-DCMAKE_BUILD_TYPE=Release" \
-            --cmake_option "-DENABLE_LTO=ON"
+            --cmake_option="-DCMAKE_BUILD_TYPE=Release -DENABLE_LTO=ON"
 
       - name: Upload Result
         uses: actions/upload-artifact@v4
         with:
           name: opencv-js-custom
-          path: build_wasm/bin/opencv.js
+          path: build_out/bin/opencv.js
