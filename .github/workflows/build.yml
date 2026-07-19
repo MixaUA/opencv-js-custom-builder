@@ -1,4 +1,5 @@
 name: Build Custom OpenCV.js
+
 on:
   workflow_dispatch:
 
@@ -8,31 +9,72 @@ permissions:
 jobs:
   build-wasm:
     runs-on: ubuntu-latest
-    container:
-      image: emscripten/emsdk:3.1.53
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install Python dependencies
+      - name: Install build dependencies
         run: |
-          apt-get update && apt-get install -y python3-pip git cmake
+          sudo apt-get update
+          sudo apt-get install -y cmake python3 python3-pip git
+
+      # Офіційний спосіб активації Emscripten — build_js.py сам знаходить
+      # тулчейн через змінну середовища EMSDK, встановлену тут.
+      - name: Setup Emscripten SDK
+        run: |
+          git clone https://github.com/emscripten-core/emsdk.git
+          cd emsdk
+          ./emsdk install latest
+          ./emsdk activate latest
 
       - name: Clone OpenCV
-        run: |
-          git clone --depth 1 --branch 4.x https://github.com/opencv/opencv.git
+        run: git clone --depth 1 --branch 4.x https://github.com/opencv/opencv.git
 
       - name: Build OpenCV.js
         run: |
-          cp minimal_config.py opencv/platforms/js/minimal_config.py
-          emcmake python3 opencv/platforms/js/build_js.py build_out \
+          source emsdk/emsdk_env.sh
+          echo "EMSDK env var: $EMSDK"
+
+          python3 opencv/platforms/js/build_js.py build_out \
             --build_wasm \
-            --config "$GITHUB_WORKSPACE/opencv/platforms/js/minimal_config.py" \
+            --config "$GITHUB_WORKSPACE/minimal_config.py" \
             --cmake_option="-DCMAKE_BUILD_TYPE=Release" \
             --cmake_option="-DBUILD_opencv_dnn=OFF" \
+            --cmake_option="-DBUILD_opencv_calib3d=OFF" \
+            --cmake_option="-DBUILD_opencv_features2d=OFF" \
+            --cmake_option="-DBUILD_opencv_photo=OFF" \
+            --cmake_option="-DBUILD_opencv_flann=OFF" \
             --cmake_option="-DBUILD_PROTOBUF=OFF" \
-            --cmake_option="-DWITH_PROTOBUF=OFF"
+            --cmake_option="-DWITH_PROTOBUF=OFF" \
+            --cmake_option="-DBUILD_EXAMPLES=OFF" \
+            --cmake_option="-DBUILD_TESTS=OFF" \
+            --cmake_option="-DBUILD_PERF_TESTS=OFF"
+
+      # Перевірка ПРЯМО в лозі Actions — не треба качати файл і гадати,
+      # чи ті функції взагалі всередині. Провалить крок (exit 1), якщо
+      # хоч однієї немає, щоб одразу було видно в статусі workflow.
+      - name: Verify required functions are present
+        run: |
+          FILE="build_out/bin/opencv.js"
+          SIZE=$(stat -c%s "$FILE")
+          echo "Розмір файлу: $SIZE байт ($(echo "scale=2; $SIZE/1048576" | bc) МБ)"
+
+          MISSING=0
+          for fn in findContours contourArea adaptiveThreshold warpPerspective getPerspectiveTransform moments GaussianBlur medianBlur threshold cvtColor countNonZero minEnclosingCircle approxPolyDP; do
+            if grep -q "$fn" "$FILE"; then
+              echo "OK: $fn знайдено"
+            else
+              echo "ВІДСУТНЄ: $fn"
+              MISSING=1
+            fi
+          done
+
+          if [ "$MISSING" -eq 1 ]; then
+            echo "::error::Не всі потрібні функції потрапили у збірку — дивись список вище."
+            exit 1
+          fi
+          echo "Усі потрібні функції на місці."
 
       - name: Copy opencv.js to repo root
         run: cp build_out/bin/opencv.js "$GITHUB_WORKSPACE/opencv.js"
