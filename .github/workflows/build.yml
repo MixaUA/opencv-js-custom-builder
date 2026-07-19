@@ -1,40 +1,31 @@
 name: Build Custom OpenCV.js
 on:
-  workflow_dispatch: # Дозволяє запустити збірку вручну кнопкою на сайті
+  workflow_dispatch:
 
 jobs:
   build-wasm:
     runs-on: ubuntu-latest
     container:
-      # Фіксуємо стабільну версію Emscripten, яка ідеально сумісна з OpenCV 4.x
-      image: emscripten/emsdk:3.1.53
+      # Використовуємо офіційний образ від розробників OpenCV, де все вже налаштовано
+      image: opencv/opencvjs:20240122
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install Python dependencies
-        run: |
-          apt-get update && apt-get install -y python3-pip git cmake
-          
       - name: Clone OpenCV
         run: |
           git clone --depth 1 --branch 4.x https://github.com/opencv/opencv.git
 
       - name: Build OpenCV.js
         run: |
-          # Копіюємо наш конфіг всередину папки збірки OpenCV
+          # Копіюємо конфіг
           cp minimal_config.py opencv/platforms/js/minimal_config.py
           
-          # Запускаємо збірку у передбачуваному та стабільному середовищі
+          # Запускаємо збірку через готове середовище OpenCV
           python3 opencv/platforms/js/build_js.py build_out \
             --build_wasm \
-            --config opencv/platforms/js/minimal_config.py \
-            --cmake_option="-DCMAKE_BUILD_TYPE=Release" \
-            --cmake_option="-DENABLE_LTO=ON" \
-            --cmake_option="-DBUILD_opencv_dnn=OFF" \
-            --cmake_option="-DBUILD_PROTOBUF=OFF" \
-            --cmake_option="-DWITH_PROTOBUF=OFF"
+            --config opencv/platforms/js/minimal_config.py
 
       - name: Upload Result
         uses: actions/upload-artifact@v4
