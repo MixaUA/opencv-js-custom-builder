@@ -6,7 +6,7 @@ jobs:
   build-wasm:
     runs-on: ubuntu-latest
     container:
-      image: emscripten/emsdk:latest # Запуск у чистому середовищі Emscripten з останніми оновленнями
+      image: emscripten/emsdk:latest # Запуск у чистому середовищі Emscripten
 
     steps:
       - name: Checkout repository
@@ -25,11 +25,13 @@ jobs:
           # Копіюємо наш конфіг всередину папки збірки OpenCV
           cp minimal_config.py opencv/platforms/js/minimal_config.py
           
-          # Запускаємо збірку з примусовим включенням стандарту C++17 для сумісності з новим Embind
+          # Запускаємо збірку, розділивши прапорці CMake на окремі аргументи
           python3 opencv/platforms/js/build_js.py build_out \
             --build_wasm \
             --config opencv/platforms/js/minimal_config.py \
-            --cmake_option="-DCMAKE_BUILD_TYPE=Release -DENABLE_LTO=ON -DCMAKE_CXX_STANDARD=17"
+            --cmake_option="-DCMAKE_CXX_STANDARD=17" \
+            --cmake_option="-DCMAKE_BUILD_TYPE=Release" \
+            --cmake_option="-DENABLE_LTO=ON"
 
       - name: Upload Result
         uses: actions/upload-artifact@v4
