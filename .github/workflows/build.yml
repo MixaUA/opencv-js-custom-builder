@@ -25,13 +25,16 @@ jobs:
           # Копіюємо наш конфіг всередину папки збірки OpenCV
           cp minimal_config.py opencv/platforms/js/minimal_config.py
           
-          # Запускаємо збірку, розділивши прапорці CMake на окремі аргументи
+          # Запускаємо збірку з примусовим вимкненням DNN, Protobuf та супутнього сміття
           python3 opencv/platforms/js/build_js.py build_out \
             --build_wasm \
             --config opencv/platforms/js/minimal_config.py \
             --cmake_option="-DCMAKE_CXX_STANDARD=17" \
             --cmake_option="-DCMAKE_BUILD_TYPE=Release" \
-            --cmake_option="-DENABLE_LTO=ON"
+            --cmake_option="-DENABLE_LTO=ON" \
+            --cmake_option="-DBUILD_opencv_dnn=OFF" \
+            --cmake_option="-DBUILD_PROTOBUF=OFF" \
+            --cmake_option="-DWITH_PROTOBUF=OFF"
 
       - name: Upload Result
         uses: actions/upload-artifact@v4
