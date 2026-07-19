@@ -29,7 +29,6 @@ jobs:
           emcmake python3 opencv/platforms/js/build_js.py build_out \
             --build_wasm \
             --config "$GITHUB_WORKSPACE/opencv/platforms/js/minimal_config.py" \
-            --cmake_option="-DBUILD_LIST=core,imgproc,imgcodecs" \
             --cmake_option="-DCMAKE_BUILD_TYPE=Release" \
             --cmake_option="-DBUILD_opencv_dnn=OFF" \
             --cmake_option="-DBUILD_PROTOBUF=OFF" \
